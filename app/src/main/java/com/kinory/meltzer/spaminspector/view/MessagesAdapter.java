@@ -10,6 +10,7 @@ import android.widget.TextView;
 import com.kinory.meltzer.spaminspector.R;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ public class MessagesAdapter extends BaseAdapter {
 
     @Override
     public Object getItem(int i) {
-        // The i'th message
+        // The i-th message
         return messages.get(i);
     }
 
@@ -46,19 +47,35 @@ public class MessagesAdapter extends BaseAdapter {
         return i;
     }
 
-    public void setMessages(List<String> messages) {
-        this.messages = messages;
+    public void setMessages(Collection<String> messages) {
+        this.messages = new ArrayList<>(messages);
+
+        // Refreshes the view
         notifyDataSetInvalidated();
+    }
+
+    /**
+     * Adds a collection of messages to the ListView
+     * @param newMessages The new messages to add
+     */
+    public void addMessages(Collection<String> newMessages) {
+        this.messages.addAll(newMessages);
+
+        // Refreshes the view
+        notifyDataSetChanged();
     }
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
+        // Inflates the view if it's null
         if (view == null) {
+            LayoutInflater inflater =
+                    (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.message_layout, viewGroup, false);
         }
 
+        // Configures the view
         TextView messageTextView = view.findViewById(R.id.messageTextView);
         messageTextView.setText(messages.get(i));
 
