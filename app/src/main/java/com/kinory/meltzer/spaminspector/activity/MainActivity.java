@@ -10,6 +10,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.kinory.meltzer.spaminspector.R;
+import com.kinory.meltzer.spaminspector.model.ResultListener;
+import com.kinory.meltzer.spaminspector.model.ServerConnector;
 import com.kinory.meltzer.spaminspector.view.MessagesAdapter;
 
 import java.util.ArrayList;

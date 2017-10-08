@@ -1,6 +1,5 @@
 package com.kinory.meltzer.spaminspector.model;
 
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
@@ -76,6 +75,31 @@ public class Utils {
         notificationManager.notify(++currentNotificationId, builder.build());
 
         return currentNotificationId;
+    }
+
+    /**
+     * Parses a boolean string ('True' or 'False') into a boolean
+     * @param booleanString The string representing the boolean.
+     * @return The boolean value of the string.
+     */
+    public static boolean parseBooleanString(String booleanString) {
+        switch (booleanString) {
+            case "True":
+                return true;
+            case "False":
+                return false;
+            default:
+                throw new IllegalArgumentException("booleanString should be either True or False");
+        }
+    }
+
+    /**
+     * Parses a given string into a URL valid form.
+     * @param string The string to parse
+     * @return The string in the wanted format.
+     */
+    public static String parseToURL(String string) {
+        return string.replaceAll(" ", "%20");
     }
 
 }
