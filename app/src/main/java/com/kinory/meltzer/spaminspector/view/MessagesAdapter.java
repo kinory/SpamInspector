@@ -51,7 +51,7 @@ public class MessagesAdapter extends BaseAdapter {
         this.messages = new ArrayList<>(messages);
 
         // Refreshes the view
-        notifyDataSetInvalidated();
+        notifyDataSetChanged();
     }
 
     /**
