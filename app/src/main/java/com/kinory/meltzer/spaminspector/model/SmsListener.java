@@ -1,16 +1,10 @@
 package com.kinory.meltzer.spaminspector.model;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.provider.Telephony;
 import android.telephony.SmsMessage;
-
-import com.kinory.meltzer.spaminspector.R;
-import com.kinory.meltzer.spaminspector.activity.MainActivity;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -38,20 +32,21 @@ public class SmsListener extends BroadcastReceiver {
 
                 // Adds the message's body to the set of messages
                 String messageBody = smsMessage.getMessageBody();
-                newMessages.add(messageBody);
+
+//                newMessages.add(messageBody);
             }
 
-            // Adds the new messages to set of messages saved in the shared preferences
-            SharedPreferences preferences =
-                    context.getSharedPreferences(context.getString(R.string.messages_key), Context.MODE_PRIVATE);
-            Set<String> messages = preferences.getStringSet(context.getString(R.string.messages_key), new HashSet<>());
-            messages.addAll(newMessages);
-            preferences.edit().putStringSet(context.getString(R.string.messages_key), messages).apply();
-
-            // Sends a notification for each new message
-            for (String message: newMessages) {
-                Utils.sendNotification(context, "New Message", message);
-            }
+//            // Adds the new messages to set of messages saved in the shared preferences
+//            SharedPreferences preferences =
+//                    context.getSharedPreferences(context.getString(R.string.messages_key), Context.MODE_PRIVATE);
+//            Set<String> messages = preferences.getStringSet(context.getString(R.string.messages_key), new HashSet<>());
+//            messages.addAll(newMessages);
+//            preferences.edit().putStringSet(context.getString(R.string.messages_key), messages).apply();
+//
+//            // Sends a notification for each new message
+//            for (String message: newMessages) {
+//                Utils.sendNotification(context, "New Message", message);
+//            }
         }
     }
 

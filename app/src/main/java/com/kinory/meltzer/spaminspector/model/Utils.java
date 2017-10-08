@@ -10,7 +10,7 @@ import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 
 import com.kinory.meltzer.spaminspector.R;
-import com.kinory.meltzer.spaminspector.activity.MainActivity;
+import com.kinory.meltzer.spaminspector.activity.DialogActivity;
 
 /**
  * Created by Gilad Kinory on 07/10/2017.
@@ -22,7 +22,7 @@ public class Utils {
     private static int currentNotificationId = 100;
 
     /**
-     * Sends a notification that leads to the MainActivity
+     * Sends a notification that leads to the DialogActivity
      * @param context The context
      * @param title The notification's title
      * @param contentText The content of the notification
@@ -40,14 +40,13 @@ public class Utils {
                         .setContentTitle(title)
                         .setContentText(contentText)
                         .setSmallIcon(R.mipmap.ic_launcher)
-                        .setChannel(CHANNEL_ID)
                         .setAutoCancel(true)
                         .setPriority(NotificationCompat.PRIORITY_MAX)
                         .setSound(alarmSound);
 
 
         // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(context, MainActivity.class);
+        Intent resultIntent = new Intent(context, DialogActivity.class);
 
         // The stack builder object will contain an artificial back stack for the
         // started Activity.
@@ -56,7 +55,7 @@ public class Utils {
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
 
         // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addParentStack(DialogActivity.class);
 
         // Adds the Intent that starts the Activity to the top of the stack
         stackBuilder.addNextIntent(resultIntent);
