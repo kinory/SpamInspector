@@ -5,10 +5,10 @@ import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.commons.models.IUser;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * Created by Gilad Kinory on 08/10/2017.
@@ -20,17 +20,30 @@ import java.util.List;
 
 public class Dialog implements IDialog, Serializable {
 
-    private String id;
+    // A TreeSet with a comparator that compares 2 messages according to their dates of creation
+    private TreeSet<IMessage> messages = new TreeSet<>();
+
     private IUser user;
 
-    public Dialog(String id, IUser user) {
-        this.id = id;
+    public Dialog(IUser user) {
         this.user = user;
+    }
+
+    /**
+     * Adds a message to the dialog.
+     * @param message The message to add
+     */
+    public void addMessage(IMessage message) {
+        messages.add(message);
+    }
+
+    public TreeSet<IMessage> getMessages() {
+        return messages;
     }
 
     @Override
     public String getId() {
-        return id;
+        return user.getId();
     }
 
     @Override
@@ -50,12 +63,12 @@ public class Dialog implements IDialog, Serializable {
 
     @Override
     public IMessage getLastMessage() {
-        return new Message("1", "dummy message", new User("1", "Gilad Kinory", "Kinory"), new Date());
+        return messages.last();
     }
 
     @Override
     public void setLastMessage(IMessage message) {
-
+        messages.add(message);
     }
 
     @Override

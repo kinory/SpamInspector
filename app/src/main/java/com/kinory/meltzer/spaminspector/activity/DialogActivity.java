@@ -31,8 +31,10 @@ public class DialogActivity extends AppCompatActivity {
         messagesAdapter = new MessagesListAdapter<>(dialog.getId(), null);
         messageList.setAdapter(messagesAdapter);
 
-        messagesAdapter.addToEnd(Collections.singletonList(dialog.getLastMessage()), false);
-        messagesAdapter.addToStart(new Message("2", "Hello", new User("2", "Daniel Meltzer", "Meltzer"), new Date()), true);
+        // Adds all the messages of the dialog
+        for (IMessage message: dialog.getMessages()) {
+            messagesAdapter.addToStart(message, true);
+        }
     }
 
 //    /**

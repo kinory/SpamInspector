@@ -1,28 +1,35 @@
 package com.kinory.meltzer.spaminspector.activity;
 
 import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.kinory.meltzer.spaminspector.R;
 import com.kinory.meltzer.spaminspector.model.Dialog;
+import com.kinory.meltzer.spaminspector.model.Message;
+import com.kinory.meltzer.spaminspector.model.DialogsDatabase;
 import com.kinory.meltzer.spaminspector.model.User;
-import com.stfalcon.chatkit.commons.ImageLoader;
-import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Locale;
 
 public class DialogsListActivity extends AppCompatActivity {
 
     private static final int READ_SMS_PERMISSIONS_REQUEST = 1;
 
+    private DialogsDatabase dialogsDatabase = new DialogsDatabase();
     private DialogsListAdapter<Dialog> dialogsListAdapter;
 
     @Override
@@ -30,19 +37,9 @@ public class DialogsListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dialogs_list);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-            getPermissionToReadSMS();
-        } else {
-            refreshSmsInbox();
-        }
-
         DialogsList dialogsList = (DialogsList) findViewById(R.id.dialogsList);
         dialogsListAdapter = new DialogsListAdapter<>(null);
         dialogsList.setAdapter(dialogsListAdapter);
-
-        // Adds a dummy dialog
-        dialogsListAdapter.addItem(new Dialog("1", new User("1", "Gilad Kinory", "Kinory")));
 
         // Start a DialogActivity when a dialog is clicked
         dialogsListAdapter.setOnDialogClickListener(dialog -> {
@@ -50,6 +47,14 @@ public class DialogsListActivity extends AppCompatActivity {
             intent.putExtra("dialog", dialog);
             startActivity(intent);
         });
+
+        // Refreshes sms inbox (asks for permissions first, if needed)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            getPermissionToReadSMS();
+        } else {
+            refreshSmsInbox();
+        }
 
     }
 
@@ -86,8 +91,44 @@ public class DialogsListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Refreshes the sms inbox
+     */
     private void refreshSmsInbox() {
-        // TODO: write some code in here
+        // Accesses the sms database
+        ContentResolver contentResolver = getContentResolver();
+        Cursor smsInboxCursor = contentResolver.query(Uri.parse("content://sms/inbox"), null, null, null, null);
+
+        // Gets the database keys
+        assert smsInboxCursor != null;
+        int indexBody = smsInboxCursor.getColumnIndex("body");
+        int indexAddress = smsInboxCursor.getColumnIndex("address");
+        int indexDateSent = smsInboxCursor.getColumnIndex("date_sent");
+
+        // Makes sure that the sms database isn't empty
+        if (indexBody < 0 || !smsInboxCursor.moveToFirst()) return;
+
+        // Clears the message database and the dialogs list
+        dialogsDatabase.clear();
+        dialogsListAdapter.clear();
+
+        // Iterates over the messages
+        do {
+
+            // Gets the data of the message from the sms database
+            String sender = smsInboxCursor.getString(indexAddress);
+            String text = smsInboxCursor.getString(indexBody);
+            long dateSent = smsInboxCursor.getLong(indexDateSent);
+            String id = String.format(Locale.getDefault(), "%s%d", sender, dateSent);
+            User user = new User(sender);
+
+            // Adds the message to the message database
+            Message message = new Message(id, text, user, new Date(dateSent));
+            dialogsDatabase.addMessage(sender, message);
+
+        } while (smsInboxCursor.moveToNext());
+
+        dialogsListAdapter.addItems(new ArrayList<>(dialogsDatabase.getAllDialogs()));
     }
 
 }

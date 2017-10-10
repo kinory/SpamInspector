@@ -14,19 +14,15 @@ import java.io.Serializable;
 
 public class User implements IUser, Serializable {
 
-    private String id;
     private String name;
-    private String avatar;
 
-    public User(String id, String name, String avatar) {
-        this.id = id;
+    public User(String name) {
         this.name = name;
-        this.avatar = avatar;
     }
 
     @Override
     public String getId() {
-        return id;
+        return name;
     }
 
     @Override
@@ -36,7 +32,7 @@ public class User implements IUser, Serializable {
 
     @Override
     public String getAvatar() {
-        return avatar;
+        return name;
     }
 
 }

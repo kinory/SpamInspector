@@ -1,8 +1,11 @@
 package com.kinory.meltzer.spaminspector.model;
 
+import android.support.annotation.NonNull;
+
 import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.commons.models.IUser;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -13,7 +16,7 @@ import java.util.Date;
  * A class representing a message.
  */
 
-public class Message implements IMessage {
+public class Message implements IMessage, Serializable, Comparable<Message> {
 
     private String id;
     private String text;
@@ -47,4 +50,8 @@ public class Message implements IMessage {
         return createdAt;
     }
 
+    @Override
+    public int compareTo(@NonNull Message o) {
+        return getCreatedAt().compareTo(o.getCreatedAt());
+    }
 }
