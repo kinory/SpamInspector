@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Spam Inspector</string>
     <string name="messages_key">messages</string>
+    <string name="type_your_message">Type your message...</string>
 </resources>

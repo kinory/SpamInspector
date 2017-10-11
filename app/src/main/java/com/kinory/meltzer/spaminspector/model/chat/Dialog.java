@@ -1,4 +1,4 @@
-package com.kinory.meltzer.spaminspector.model;
+package com.kinory.meltzer.spaminspector.model.chat;
 
 import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.commons.models.IMessage;
@@ -6,7 +6,6 @@ import com.stfalcon.chatkit.commons.models.IUser;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -22,7 +21,6 @@ public class Dialog implements IDialog, Serializable {
 
     // A TreeSet with a comparator that compares 2 messages according to their dates of creation
     private TreeSet<IMessage> messages = new TreeSet<>();
-
     private IUser user;
 
     public Dialog(IUser user) {
@@ -31,6 +29,7 @@ public class Dialog implements IDialog, Serializable {
 
     /**
      * Adds a message to the dialog.
+     *
      * @param message The message to add
      */
     public void addMessage(IMessage message) {
@@ -61,6 +60,10 @@ public class Dialog implements IDialog, Serializable {
         return Collections.singletonList(user);
     }
 
+    public IUser getUser() {
+        return user;
+    }
+
     @Override
     public IMessage getLastMessage() {
         return messages.last();
@@ -68,11 +71,12 @@ public class Dialog implements IDialog, Serializable {
 
     @Override
     public void setLastMessage(IMessage message) {
-        messages.add(message);
+        addMessage(message);
     }
 
     @Override
     public int getUnreadCount() {
         return 0;
     }
+
 }

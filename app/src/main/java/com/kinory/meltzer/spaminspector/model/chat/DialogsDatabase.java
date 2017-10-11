@@ -1,4 +1,4 @@
-package com.kinory.meltzer.spaminspector.model;
+package com.kinory.meltzer.spaminspector.model.chat;
 
 import com.stfalcon.chatkit.commons.models.IMessage;
 
@@ -22,10 +22,13 @@ public class DialogsDatabase {
      * @param message The message to add
      */
     public void addMessage(String sender, IMessage message) {
-        if (!sendersDialogsMap.containsKey(sender))
-            sendersDialogsMap.put(sender, new Dialog(new User(sender)));
-
-        sendersDialogsMap.get(sender).addMessage(message);
+        if (!sendersDialogsMap.containsKey(sender)) {
+            Dialog dialog = new Dialog(new User(sender));
+            sendersDialogsMap.put(sender, dialog);
+            dialog.addMessage(message);
+        } else {
+            sendersDialogsMap.get(sender).addMessage(message);
+        }
     }
 
     /**
@@ -55,5 +58,4 @@ public class DialogsDatabase {
     public void clear() {
         sendersDialogsMap.clear();
     }
-
 }

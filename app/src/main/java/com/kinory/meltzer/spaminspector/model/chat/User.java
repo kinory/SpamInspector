@@ -1,4 +1,4 @@
-package com.kinory.meltzer.spaminspector.model;
+package com.kinory.meltzer.spaminspector.model.chat;
 
 import com.stfalcon.chatkit.commons.models.IUser;
 

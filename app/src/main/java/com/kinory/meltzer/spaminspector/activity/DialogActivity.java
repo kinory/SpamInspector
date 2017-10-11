@@ -1,23 +1,30 @@
 package com.kinory.meltzer.spaminspector.activity;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 
 import com.kinory.meltzer.spaminspector.R;
-import com.kinory.meltzer.spaminspector.model.Dialog;
-import com.kinory.meltzer.spaminspector.model.Message;
-import com.kinory.meltzer.spaminspector.model.User;
+import com.kinory.meltzer.spaminspector.model.Utils;
+import com.kinory.meltzer.spaminspector.model.chat.Dialog;
+import com.kinory.meltzer.spaminspector.model.chat.Message;
 import com.stfalcon.chatkit.commons.models.IMessage;
+import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
-import java.util.Collections;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DialogActivity extends AppCompatActivity {
 
     private MessagesListAdapter<IMessage> messagesAdapter;
+    private SmsManager smsManager = SmsManager.getDefault();
     private Dialog dialog;
+    private static DialogActivity current;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,29 +38,70 @@ public class DialogActivity extends AppCompatActivity {
         messagesAdapter = new MessagesListAdapter<>(dialog.getId(), null);
         messageList.setAdapter(messagesAdapter);
 
-        // Adds all the messages of the dialog
+        // Adds all the messages of the dialog that aren't yet in the list
         for (IMessage message: dialog.getMessages()) {
             messagesAdapter.addToStart(message, true);
         }
+
+
+        // Add an input listener in order to send new message when the send button is clicked
+        MessageInput messageInput = (MessageInput) findViewById(R.id.input);
+        messageInput.setInputListener(input -> {
+            sendMessage(input.toString());
+            return true;
+        });
     }
 
-//    /**
-//     * Sets the messages list in the messageListView.
-//     * @param messages The messages to put in the list view.
-//     */
-//    public void setMessages(Collection<String> messages) {
-//        messagesAdapter.setMessages(messages);
-//    }
-//
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//
-//        // Gets the updated set of messages from the shared preferences
-//        SharedPreferences preferences = getSharedPreferences(getString(R.string.messages_key), Context.MODE_PRIVATE);
-//        Set<String> messages = preferences.getStringSet(getString(R.string.messages_key), new HashSet<>());
-//
-//        // Adds the messages to messagesListView
-//        setMessages(messages);
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setCurrent(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        setCurrent(null);
+    }
+
+    /**
+     * Sends a message.
+     * @param message The message to send.
+     */
+    private void sendMessage(String message) {
+        // Asks for permissions if needed
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            Utils.getPermissionToReadSMS(this);
+        } else {
+
+            // Sends the message
+            smsManager.sendTextMessage(dialog.getUser().getId(), null, message, null, null);
+        }
+    }
+
+    public static DialogActivity getCurrent() {
+        return current;
+    }
+
+    public static void setCurrent(DialogActivity current) {
+        DialogActivity.current = current;
+    }
+
+    public static boolean isCurrentlyRunning() {
+        return current != null;
+    }
+
+    public Dialog getDialog() {
+        return dialog;
+    }
+
+    /**
+     * Adds a message to the dialog (and the list)
+     * @param message The new message to add.
+     */
+    public void addMessage(IMessage message) {
+        dialog.addMessage(message);
+        messagesAdapter.addToStart(message, true);
+    }
 }

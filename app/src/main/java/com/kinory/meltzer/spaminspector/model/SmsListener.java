@@ -3,11 +3,17 @@ package com.kinory.meltzer.spaminspector.model;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.provider.Telephony;
+import android.os.Bundle;
 import android.telephony.SmsMessage;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.kinory.meltzer.spaminspector.activity.DialogActivity;
+import com.kinory.meltzer.spaminspector.activity.DialogsListActivity;
+import com.kinory.meltzer.spaminspector.model.chat.Dialog;
+import com.kinory.meltzer.spaminspector.model.chat.Message;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by Gilad Kinory on 06/10/2017.
@@ -19,34 +25,59 @@ import java.util.Set;
 
 public class SmsListener extends BroadcastReceiver {
 
+    public static final String SMS_BUNDLE = "pdus";
+
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        // When a text message is being received
-        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())) {
+        Bundle intentExtras = intent.getExtras();
+        List<Message> messages = new ArrayList<>();
 
-            Set<String> newMessages = new HashSet<>();
 
-            // Iterates over the new messages
-            for (SmsMessage smsMessage : Telephony.Sms.Intents.getMessagesFromIntent(intent)) {
+        if (intentExtras != null) {
+            Object[] sms = (Object[]) intentExtras.get(SMS_BUNDLE);
 
-                // Adds the message's body to the set of messages
-                String messageBody = smsMessage.getMessageBody();
+            // Iterates over the messages
+            assert sms != null;
+            for (Object sm : sms) {
+                String format = intentExtras.getString("format");
+                SmsMessage smsMessage = SmsMessage.createFromPdu((byte[]) sm, format);
 
-//                newMessages.add(messageBody);
+                // Gets the data of the message
+                String sender = smsMessage.getOriginatingAddress();
+                String smsBody = smsMessage.getMessageBody();
+                long dateSent = smsMessage.getTimestampMillis();
+
+                // Creates the message object from the data
+                Message message = Utils.createMessageFromData(sender, smsBody, dateSent);
+
+                messages.add(message);
             }
 
-//            // Adds the new messages to set of messages saved in the shared preferences
-//            SharedPreferences preferences =
-//                    context.getSharedPreferences(context.getString(R.string.messages_key), Context.MODE_PRIVATE);
-//            Set<String> messages = preferences.getStringSet(context.getString(R.string.messages_key), new HashSet<>());
-//            messages.addAll(newMessages);
-//            preferences.edit().putStringSet(context.getString(R.string.messages_key), messages).apply();
-//
-//            // Sends a notification for each new message
-//            for (String message: newMessages) {
-//                Utils.sendNotification(context, "New Message", message);
-//            }
+            DialogsListActivity.setIsDialogsListUpToDate(false);
+
+            // Refreshes the DialogsListActivity if it's running
+            if (DialogsListActivity.isCurrentlyRunning()) {
+                DialogsListActivity.getCurrent().addMessagesToInbox(messages);
+                DialogsListActivity.setIsDialogsListUpToDate(true);
+            }
+
+            // Refreshes the DialogActivity if it's running
+            if (DialogActivity.isCurrentlyRunning()) {
+                // Gets the current dialog
+                DialogActivity dialogActivity = DialogActivity.getCurrent();
+                Dialog dialog = dialogActivity.getDialog();
+                String userId = dialog.getUser().getId();
+
+                // Adds the messages matching to the current dialog
+                messages.stream()
+                        .filter(message -> message.getUser().getId().equals(userId))
+                        .forEach(dialogActivity::addMessage);
+            }
+
+            // Notifies the user about the new messages
+            for (Message message: messages)
+                Utils.sendMessageNotification(context, message);
         }
     }
 

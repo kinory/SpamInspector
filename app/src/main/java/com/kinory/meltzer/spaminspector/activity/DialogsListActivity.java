@@ -10,32 +10,32 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import com.kinory.meltzer.spaminspector.R;
-import com.kinory.meltzer.spaminspector.model.Dialog;
-import com.kinory.meltzer.spaminspector.model.Message;
-import com.kinory.meltzer.spaminspector.model.DialogsDatabase;
-import com.kinory.meltzer.spaminspector.model.User;
+import com.kinory.meltzer.spaminspector.model.Utils;
+import com.kinory.meltzer.spaminspector.model.chat.Dialog;
+import com.kinory.meltzer.spaminspector.model.chat.Message;
+import com.kinory.meltzer.spaminspector.model.chat.DialogsDatabase;
+import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Locale;
+import java.util.List;
 
 public class DialogsListActivity extends AppCompatActivity {
 
-    private static final int READ_SMS_PERMISSIONS_REQUEST = 1;
-
-    private DialogsDatabase dialogsDatabase = new DialogsDatabase();
+    private DialogsDatabase dialogsDatabase;
     private DialogsListAdapter<Dialog> dialogsListAdapter;
+    private static DialogsListActivity current;
+    private static boolean isDialogsListUpToDate = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dialogs_list);
+
+        dialogsDatabase = new DialogsDatabase();
 
         DialogsList dialogsList = (DialogsList) findViewById(R.id.dialogsList);
         dialogsListAdapter = new DialogsListAdapter<>(null);
@@ -51,24 +51,24 @@ public class DialogsListActivity extends AppCompatActivity {
         // Refreshes sms inbox (asks for permissions first, if needed)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
                 != PackageManager.PERMISSION_GRANTED) {
-            getPermissionToReadSMS();
+            Utils.getPermissionToReadSMS(this);
         } else {
-            refreshSmsInbox();
+            refreshInbox();
         }
 
     }
 
-    /**
-     * Gets the needed permissions to read sms.
-     */
-    public void getPermissionToReadSMS() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.READ_SMS)) {
-                Toast.makeText(this, "Please allow permission!", Toast.LENGTH_SHORT).show();
-            }
-            requestPermissions(new String[]{Manifest.permission.READ_SMS}, READ_SMS_PERMISSIONS_REQUEST);
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setCurrent(this);
+        if (!isDialogsListUpToDate()) refreshInbox();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        setCurrent(null);
     }
 
     @Override
@@ -76,14 +76,11 @@ public class DialogsListActivity extends AppCompatActivity {
                                            @NonNull String permissions[],
                                            @NonNull int[] grantResults) {
 
-        // Make sure it's our original READ_CONTACTS request
-        if (requestCode == READ_SMS_PERMISSIONS_REQUEST) {
+        // Refreshes the inbox if sms permissions were granted
+        if (requestCode == Utils.READ_SMS_PERMISSIONS_REQUEST) {
             if (grantResults.length == 1 &&
                     grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Read SMS permission granted", Toast.LENGTH_SHORT).show();
-                refreshSmsInbox();
-            } else {
-                Toast.makeText(this, "Read SMS permission denied", Toast.LENGTH_SHORT).show();
+                refreshInbox();
             }
 
         } else {
@@ -94,7 +91,7 @@ public class DialogsListActivity extends AppCompatActivity {
     /**
      * Refreshes the sms inbox
      */
-    private void refreshSmsInbox() {
+    private void refreshInbox() {
         // Accesses the sms database
         ContentResolver contentResolver = getContentResolver();
         Cursor smsInboxCursor = contentResolver.query(Uri.parse("content://sms/inbox"), null, null, null, null);
@@ -119,16 +116,49 @@ public class DialogsListActivity extends AppCompatActivity {
             String sender = smsInboxCursor.getString(indexAddress);
             String text = smsInboxCursor.getString(indexBody);
             long dateSent = smsInboxCursor.getLong(indexDateSent);
-            String id = String.format(Locale.getDefault(), "%s%d", sender, dateSent);
-            User user = new User(sender);
 
             // Adds the message to the message database
-            Message message = new Message(id, text, user, new Date(dateSent));
+            Message message = Utils.createMessageFromData(sender, text, dateSent);
             dialogsDatabase.addMessage(sender, message);
 
         } while (smsInboxCursor.moveToNext());
 
         dialogsListAdapter.addItems(new ArrayList<>(dialogsDatabase.getAllDialogs()));
+
+        setIsDialogsListUpToDate(true);
     }
 
+    /**
+     * Adds a list of messages to the inbox
+     * @param messages The list of messages to add.
+     */
+    public void addMessagesToInbox(List<? extends IMessage> messages) {
+        for (IMessage message: messages) {
+            String sender = message.getUser().getId();
+            boolean dialogExists = dialogsDatabase.containsSender(sender);
+            dialogsDatabase.addMessage(sender, message);
+            if (!dialogExists) dialogsListAdapter.addItem(dialogsDatabase.getDialog(sender));
+        }
+        dialogsListAdapter.notifyDataSetChanged();
+    }
+
+    public static DialogsListActivity getCurrent() {
+        return current;
+    }
+
+    public static void setCurrent(DialogsListActivity current) {
+        DialogsListActivity.current = current;
+    }
+
+    public static boolean isCurrentlyRunning() {
+        return current != null;
+    }
+
+    public static boolean isDialogsListUpToDate() {
+        return isDialogsListUpToDate;
+    }
+
+    public static void setIsDialogsListUpToDate(boolean isDialogsListUpToDate) {
+        DialogsListActivity.isDialogsListUpToDate = isDialogsListUpToDate;
+    }
 }
